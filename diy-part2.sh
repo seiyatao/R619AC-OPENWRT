@@ -18,20 +18,10 @@ sed -i 's/timezone=.*/timezone="CST-8"/g' package/base-files/files/bin/config_ge
 # 默认 LAN IP（保持 192.168.1.1，按需修改）
 # sed -i 's/192.168.1.1/192.168.10.1/g' package/base-files/files/bin/config_generate
 
-# 移除默认的 dnsmasq，使用 dnsmasq-full（支持 ipset/nftset）
-# sed -i 's/dnsmasq/dnsmasq-full/g' include/target.mk
 
-# 移除可能导致 Kconfig 报错或与官方源冲突的第三方包
-rm -rf package/feeds/kenzo/luci-app-fchomo
-rm -rf package/feeds/kenzo/luci-app-homeproxy
-rm -rf package/feeds/kenzo/luci-app-momo
-rm -rf package/feeds/kenzo/momo
-rm -rf package/feeds/kenzo/luci-app-passwall
-rm -rf package/feeds/kenzo/passwall
-
-# 移除第三方源中可能导致冲突的 argon 主题，使用单独的 jerrykuku 源
-rm -rf package/feeds/kenzo/luci-theme-argon
-rm -rf package/feeds/kenzo/luci-app-argon-config
+# 独立拉取缺失的第三方插件，避免引入整个 kenzo 源的冲突
+git clone --depth=1 https://github.com/rufengsuixing/luci-app-adguardhome.git package/luci-app-adguardhome
+git clone --depth=1 https://github.com/sirpdboy/luci-app-netspeedtest.git package/luci-app-netspeedtest
 
 echo ">>> diy-part2.sh: 默认配置已修改"
 echo "    主机名: R619AC"
