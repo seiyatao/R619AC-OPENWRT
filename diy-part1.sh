@@ -4,9 +4,12 @@
 # 用途：添加第三方插件源
 #=============================================================
 
-# ===== 科学上网及常用插件合集（kenzok8 包含了 Passwall、AdGuardHome、SmartDNS 等所有所需插件）=====
+# ===== 科学上网：使用 xiaorouji 官方源 (完美适配 24.10) =====
+echo "src-git passwall_packages https://github.com/xiaorouji/openwrt-passwall-packages.git;main" >> feeds.conf.default
+echo "src-git passwall https://github.com/xiaorouji/openwrt-passwall.git;main" >> feeds.conf.default
+
+# ===== 第三方常用插件合集 (AdGuardHome/SmartDNS/KMS等) =====
 echo "src-git kenzo https://github.com/kenzok8/openwrt-packages.git;master" >> feeds.conf.default
-echo "src-git small https://github.com/kenzok8/small.git;master" >> feeds.conf.default
 
 # ===== Argon 主题 + 配置面板 =====
 echo "src-git argon https://github.com/jerrykuku/luci-theme-argon.git;master" >> feeds.conf.default

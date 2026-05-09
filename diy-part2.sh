@@ -21,15 +21,13 @@ sed -i 's/timezone=.*/timezone="CST-8"/g' package/base-files/files/bin/config_ge
 # 移除默认的 dnsmasq，使用 dnsmasq-full（支持 ipset/nftset）
 # sed -i 's/dnsmasq/dnsmasq-full/g' include/target.mk
 
-# 移除导致 Kconfig 循环依赖报错的无用第三方包
-rm -rf package/feeds/small/luci-app-fchomo
-rm -rf package/feeds/small/luci-app-homeproxy
-rm -rf package/feeds/small/luci-app-momo
-rm -rf package/feeds/small/momo
+# 移除可能导致 Kconfig 报错或与官方源冲突的第三方包
 rm -rf package/feeds/kenzo/luci-app-fchomo
 rm -rf package/feeds/kenzo/luci-app-homeproxy
 rm -rf package/feeds/kenzo/luci-app-momo
 rm -rf package/feeds/kenzo/momo
+rm -rf package/feeds/kenzo/luci-app-passwall
+rm -rf package/feeds/kenzo/passwall
 
 # 移除第三方源中可能导致冲突的 argon 主题，使用单独的 jerrykuku 源
 rm -rf package/feeds/kenzo/luci-theme-argon
