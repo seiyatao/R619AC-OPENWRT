@@ -1,0 +1,14 @@
+# 编译产物
+bin/
+build_dir/
+staging_dir/
+tmp/
+dl/
+logs/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+/.vs
