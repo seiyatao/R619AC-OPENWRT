@@ -38,7 +38,6 @@
 | ✅ Samba4 | `luci-app-samba4` | USB 硬盘网络共享 (SMB) |
 | ✅ Transmission | `luci-app-transmission` | BT 下载 |
 | ✅ 文件管理器 | `luci-app-filemanager` | Web 文件管理 |
-| ✅ USB 3.0 | `kmod-usb3` | ext4/NTFS/FAT 文件系统 |
 
 ### 系统工具
 | 功能 | 包名 | 说明 |
@@ -48,7 +47,6 @@
 | ✅ 定时重启 | `luci-app-watchcat` | 定时/断网自动重启 |
 | ✅ irqbalance | `irqbalance` | 多核中断均衡 |
 | ✅ 系统监控 | `luci-app-statistics` | CPU/内存/流量统计 |
-| ✅ 硬盘休眠 | `luci-app-hd-idle` | USB 硬盘省电 |
 
 ## 使用方法
 
