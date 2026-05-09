@@ -22,6 +22,9 @@ sed -i 's/192.168.1.1/192.168.2.1/g' package/base-files/files/bin/config_generat
 # 独立拉取缺失的第三方插件，避免引入整个 kenzo 源的冲突
 git clone --depth=1 https://github.com/rufengsuixing/luci-app-adguardhome.git package/luci-app-adguardhome
 git clone --depth=1 https://github.com/sirpdboy/luci-app-netspeedtest.git package/luci-app-netspeedtest
+git clone --depth=1 https://github.com/cokebar/openwrt-vlmcsd.git package/vlmcsd
+git clone --depth=1 https://github.com/cokebar/luci-app-vlmcsd.git package/luci-app-vlmcsd
+git clone --depth=1 -b lede https://github.com/pymumu/luci-app-smartdns.git package/luci-app-smartdns
 
 echo ">>> diy-part2.sh: 默认配置已修改"
 echo "    主机名: R619AC"
