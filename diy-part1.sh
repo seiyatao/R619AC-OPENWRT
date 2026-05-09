@@ -4,17 +4,15 @@
 # 用途：添加第三方插件源
 #=============================================================
 
-# ===== Passwall 科学上网 =====
-echo "src-git passwall_packages https://github.com/xiaorouji/openwrt-passwall-packages.git;main" >> feeds.conf.default
-echo "src-git passwall https://github.com/xiaorouji/openwrt-passwall.git;main" >> feeds.conf.default
+# ===== 科学上网及常用插件合集（kenzok8 包含了 Passwall、AdGuardHome、SmartDNS 等所有所需插件）=====
+echo "src-git kenzo https://github.com/kenzok8/openwrt-packages.git;master" >> feeds.conf.default
+echo "src-git small https://github.com/kenzok8/small.git;master" >> feeds.conf.default
 
 # ===== Argon 主题 + 配置面板 =====
 echo "src-git argon https://github.com/jerrykuku/luci-theme-argon.git;master" >> feeds.conf.default
 echo "src-git argon_config https://github.com/jerrykuku/luci-app-argon-config.git;master" >> feeds.conf.default
 
-# ===== 第三方常用插件合集（AdGuardHome / SmartDNS / KMS / 网速测试 / 文件管理等）=====
-echo "src-git kenzo https://github.com/kenzok8/openwrt-packages.git;master" >> feeds.conf.default
-echo "src-git small https://github.com/kenzok8/small.git;master" >> feeds.conf.default
+
 
 echo ""
 echo ">>> diy-part1.sh: 第三方 feeds 已添加"
