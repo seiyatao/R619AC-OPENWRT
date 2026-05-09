@@ -11,9 +11,7 @@ echo "src-git passwall https://github.com/xiaorouji/openwrt-passwall.git;main" >
 # ===== 第三方常用插件合集 (AdGuardHome/SmartDNS/KMS等) =====
 echo "src-git kenzo https://github.com/kenzok8/openwrt-packages.git;master" >> feeds.conf.default
 
-# ===== Argon 主题 + 配置面板 =====
-echo "src-git argon https://github.com/jerrykuku/luci-theme-argon.git;master" >> feeds.conf.default
-echo "src-git argon_config https://github.com/jerrykuku/luci-app-argon-config.git;master" >> feeds.conf.default
+
 
 
 
