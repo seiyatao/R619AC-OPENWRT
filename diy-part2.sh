@@ -21,6 +21,16 @@ sed -i 's/timezone=.*/timezone="CST-8"/g' package/base-files/files/bin/config_ge
 # 移除默认的 dnsmasq，使用 dnsmasq-full（支持 ipset/nftset）
 # sed -i 's/dnsmasq/dnsmasq-full/g' include/target.mk
 
+# 移除导致 Kconfig 循环依赖报错的无用第三方包
+rm -rf package/feeds/small/luci-app-fchomo
+rm -rf package/feeds/small/luci-app-homeproxy
+rm -rf package/feeds/kenzo/luci-app-fchomo
+rm -rf package/feeds/kenzo/luci-app-homeproxy
+
+# 移除第三方源中可能导致冲突的 argon 主题，使用单独的 jerrykuku 源
+rm -rf package/feeds/kenzo/luci-theme-argon
+rm -rf package/feeds/kenzo/luci-app-argon-config
+
 echo ">>> diy-part2.sh: 默认配置已修改"
 echo "    主机名: R619AC"
 echo "    时区: CST-8 (中国)"
