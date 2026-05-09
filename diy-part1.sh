@@ -4,9 +4,9 @@
 # 用途：添加第三方插件源
 #=============================================================
 
-# ===== 科学上网：使用 xiaorouji 官方源 (完美适配 24.10) =====
-echo "src-git passwall_packages https://github.com/xiaorouji/openwrt-passwall-packages.git;main" >> feeds.conf.default
-echo "src-git passwall https://github.com/xiaorouji/openwrt-passwall.git;main" >> feeds.conf.default
+# ===== 科学上网：使用官方源 (完美适配 24.10) =====
+echo "src-git passwall_packages https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git;main" >> feeds.conf.default
+echo "src-git passwall https://github.com/Openwrt-Passwall/openwrt-passwall.git;main" >> feeds.conf.default
 
 
 
