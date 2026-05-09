@@ -15,8 +15,8 @@ sed -i 's/"UTC"/"CST-8"/g' package/base-files/files/bin/config_generate
 sed -i "s/'UTC0'/'CST-8'/g" package/base-files/files/bin/config_generate
 sed -i 's/timezone=.*/timezone="CST-8"/g' package/base-files/files/bin/config_generate
 
-# 默认 LAN IP（保持 192.168.1.1，按需修改）
-# sed -i 's/192.168.1.1/192.168.10.1/g' package/base-files/files/bin/config_generate
+# 修改默认 LAN IP 为 192.168.2.1
+sed -i 's/192.168.1.1/192.168.2.1/g' package/base-files/files/bin/config_generate
 
 
 # 独立拉取缺失的第三方插件，避免引入整个 kenzo 源的冲突
@@ -26,4 +26,4 @@ git clone --depth=1 https://github.com/sirpdboy/luci-app-netspeedtest.git packag
 echo ">>> diy-part2.sh: 默认配置已修改"
 echo "    主机名: R619AC"
 echo "    时区: CST-8 (中国)"
-echo "    LAN IP: 192.168.1.1"
+echo "    LAN IP: 192.168.2.1"
