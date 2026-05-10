@@ -43,6 +43,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write
 
     steps:
     - name: 检出仓库代码
