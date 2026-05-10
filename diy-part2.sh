@@ -18,10 +18,11 @@ sed -i 's/timezone=.*/timezone="CST-8"/g' package/base-files/files/bin/config_ge
 # 修改默认 LAN IP 为 192.168.2.1
 sed -i 's/192.168.1.1/192.168.2.1/g' package/base-files/files/bin/config_generate
 
-# 移除 geoview（要求 Go 1.25，而 OpenWrt 24.10 仅提供 Go 1.23，无法编译）
-# geoview 仅用于查看 GeoIP/Geosite 规则，Passwall 核心功能不依赖它
+# 移除 geoview 和 v2ray-plugin（要求 Go 版本过高，且非核心必备插件）
 rm -rf feeds/passwall_packages/geoview
 rm -rf package/feeds/passwall_packages/geoview
+rm -rf feeds/passwall_packages/v2ray-plugin
+rm -rf package/feeds/passwall_packages/v2ray-plugin
 
 # 独立拉取缺失的第三方插件，避免引入整个 kenzo 源的冲突
 git clone --depth=1 https://github.com/rufengsuixing/luci-app-adguardhome.git package/luci-app-adguardhome
