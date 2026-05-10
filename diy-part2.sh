@@ -18,6 +18,17 @@ sed -i 's/timezone=.*/timezone="CST-8"/g' package/base-files/files/bin/config_ge
 # 修改默认 LAN IP 为 192.168.2.1
 sed -i 's/192.168.1.1/192.168.2.1/g' package/base-files/files/bin/config_generate
 
+# 修复 geoview 的 Go 版本要求过高导致编译失败 (生成 patch 自动降级 go.mod)
+mkdir -p feeds/passwall_packages/geoview/patches
+cat << 'EOF' > feeds/passwall_packages/geoview/patches/999-fix-go-version.patch
+--- a/go.mod
++++ b/go.mod
+@@ -1,3 +1,3 @@
+ module github.com/MetaCubeX/geoview
+ 
+-go 1.25.0
++go 1.23.0
+EOF
 
 # 独立拉取缺失的第三方插件，避免引入整个 kenzo 源的冲突
 git clone --depth=1 https://github.com/rufengsuixing/luci-app-adguardhome.git package/luci-app-adguardhome
