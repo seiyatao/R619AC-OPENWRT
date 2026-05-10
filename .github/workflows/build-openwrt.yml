@@ -110,9 +110,17 @@ jobs:
       run: |
         cd openwrt
         make defconfig
+        echo "===== 导出 defconfig 后的完整配置用于排查 ====="
+        cp .config .config.full
         make download -j8
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
+
+    - name: 导出完整配置（用于排查网口问题）
+      uses: actions/upload-artifact@v4
+      with:
+        name: defconfig-full
+        path: openwrt/.config.full
 
     - name: 编译固件
       id: compile
