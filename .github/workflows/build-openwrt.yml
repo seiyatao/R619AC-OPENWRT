@@ -165,6 +165,13 @@ jobs:
         echo "- 设备：P&W R619AC 128M" >> release.txt
         echo "- 编译时间：$(date +"%Y-%m-%d %H:%M")" >> release.txt
         echo "- 包含：Passwall + LuCI 中文 + 基础工具" >> release.txt
+        echo "" >> release.txt
+        echo "### 刷机建议" >> release.txt
+        echo "" >> release.txt
+        echo "1. OpBoot 先刷官方 24.10.0 factory.ubi 打底。" >> release.txt
+        echo "2. 进入官方 OpenWrt 后，在 LuCI 备份/升级页面刷本 Release 的 sysupgrade.bin。" >> release.txt
+        echo "3. 从官方 24.10.0 打底系统升级时，建议勾选保留配置。" >> release.txt
+        echo "4. 不建议直接用 OpBoot 首刷本 Release 的自编译 factory.ubi。" >> release.txt
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: 发布 Release
