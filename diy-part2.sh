@@ -41,6 +41,48 @@ git clone --depth=1 https://github.com/cokebar/openwrt-vlmcsd.git package/vlmcsd
 git clone --depth=1 https://github.com/cokebar/luci-app-vlmcsd.git package/luci-app-vlmcsd
 git clone --depth=1 -b lede https://github.com/pymumu/luci-app-smartdns.git package/luci-app-smartdns
 
+# Passwall Release 提供了单独的中文语言包，feed 中不一定能直接安装到镜像
+mkdir -p package/passwall-i18n/files
+wget -O package/passwall-i18n/files/luci-i18n-passwall-zh-cn.ipk \
+  https://github.com/Openwrt-Passwall/openwrt-passwall/releases/download/26.5.3-1/23.05-24.10_luci-i18n-passwall-zh-cn_26.5.3_all.ipk
+cat > package/passwall-i18n/Makefile <<'EOF'
+include $(TOPDIR)/rules.mk
+
+PKG_NAME:=luci-i18n-passwall-zh-cn-release
+PKG_VERSION:=26.5.3
+PKG_RELEASE:=1
+PKG_ARCH:=all
+
+include $(INCLUDE_DIR)/package.mk
+
+define Package/luci-i18n-passwall-zh-cn-release
+  SECTION:=luci
+  CATEGORY:=LuCI
+  TITLE:=Passwall Simplified Chinese translation from upstream release
+  DEPENDS:=+luci-app-passwall
+endef
+
+define Build/Compile
+endef
+
+define Package/luci-i18n-passwall-zh-cn-release/install
+	$(INSTALL_DIR) $(1)/usr/share/passwall-i18n
+	$(INSTALL_DATA) ./files/luci-i18n-passwall-zh-cn.ipk $(1)/usr/share/passwall-i18n/
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/99-install-passwall-i18n $(1)/etc/uci-defaults/
+endef
+
+$(eval $(call BuildPackage,luci-i18n-passwall-zh-cn-release))
+EOF
+cat > package/passwall-i18n/files/99-install-passwall-i18n <<'EOF'
+#!/bin/sh
+opkg install /usr/share/passwall-i18n/luci-i18n-passwall-zh-cn.ipk
+rm -rf /usr/share/passwall-i18n
+rm -f /tmp/luci-indexcache* 2>/dev/null
+rm -rf /tmp/luci-modulecache 2>/dev/null
+exit 0
+EOF
+
 echo ">>> diy-part2.sh: 默认配置已修改"
 echo "    主机名: R619AC"
 echo "    时区: CST-8 (中国)"
