@@ -18,6 +18,16 @@ sed -i 's/timezone=.*/timezone="CST-8"/g' package/base-files/files/bin/config_ge
 # 修改默认 LAN IP 为 192.168.2.1
 sed -i 's/192.168.1.1/192.168.2.1/g' package/base-files/files/bin/config_generate
 
+# 设置 LuCI 默认语言为简体中文
+mkdir -p package/base-files/files/etc/uci-defaults
+cat > package/base-files/files/etc/uci-defaults/99-luci-language <<'EOF'
+#!/bin/sh
+uci set luci.main.lang='zh_cn'
+uci set luci.languages.zh_cn='简体中文 (Simplified Chinese)'
+uci commit luci
+exit 0
+EOF
+
 # 移除 geoview 和 v2ray-plugin（要求 Go 版本过高，且非核心必备插件）
 rm -rf feeds/passwall_packages/geoview
 rm -rf package/feeds/passwall_packages/geoview
