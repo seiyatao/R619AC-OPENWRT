@@ -40,6 +40,7 @@ git clone --depth=1 https://github.com/sirpdboy/luci-app-netspeedtest.git packag
 git clone --depth=1 https://github.com/cokebar/openwrt-vlmcsd.git package/vlmcsd
 git clone --depth=1 https://github.com/cokebar/luci-app-vlmcsd.git package/luci-app-vlmcsd
 git clone --depth=1 -b lede https://github.com/pymumu/luci-app-smartdns.git package/luci-app-smartdns
+git clone --depth=1 https://github.com/sirpdboy/luci-app-lucky.git package/lucky
 
 # Passwall Release 提供了单独的中文语言包，feed 中不一定能直接安装到镜像
 mkdir -p package/passwall-i18n/files
