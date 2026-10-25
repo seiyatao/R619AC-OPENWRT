@@ -1,7 +1,7 @@
 #=============================================================
-# R619AC (竞斗云2.0) OpenWRT 24.10 自动编译
+# R619AC (竞斗云2.0) OpenWRT 25.12 自动编译
 # 基于 P3TERX/Actions-OpenWrt 模板
-# 源码：OpenWRT 官方 v24.10.7
+# 源码：OpenWRT 官方 v25.12.6
 # 科学上网：Passwall
 #=============================================================
 
@@ -29,11 +29,13 @@ on:
       - '.config'
       - 'diy-part1.sh'
       - 'diy-part2.sh'
+      - 'scripts/**'
+      - 'tests/**'
       - '.github/workflows/build-openwrt.yml'
 
 env:
   REPO_URL: https://git.openwrt.org/openwrt/openwrt.git
-  REPO_BRANCH: v24.10.7
+  REPO_BRANCH: v25.12.6
   FEEDS_CONF: feeds.conf.default
   CONFIG_FILE: .config
   DIY_P1_SH: diy-part1.sh
@@ -51,7 +53,14 @@ jobs:
 
     steps:
     - name: 检出仓库代码
-      uses: actions/checkout@main
+      uses: actions/checkout@v4
+
+    - name: 检查构建校验脚本
+      run: |
+        for script in diy-part1.sh diy-part2.sh scripts/check-build.sh; do
+          bash -n "$script"
+        done
+        python3 -m unittest discover -s tests -v
 
     - name: 初始化编译环境
       env:
@@ -101,24 +110,31 @@ jobs:
         cd openwrt
         $GITHUB_WORKSPACE/$DIY_P2_SH
 
-    - name: 校验 Passwall 配套 Go 和 Xray
+    - name: 整理配置并校验 APK、中文和必需组件
       run: |
         cd openwrt
-        GO_MAKEFILE=feeds/packages/lang/golang/golang/Makefile
-        XRAY_MAKEFILE=package/feeds/passwall_packages/xray-core/Makefile
-        test -f "$GO_MAKEFILE"
-        test -f "$XRAY_MAKEFILE"
-        test ! -e package/feeds/packages/xray-core
-        GO_MAJOR_MINOR=$(sed -n 's/^GO_VERSION_MAJOR_MINOR:=//p' "$GO_MAKEFILE" | head -n 1)
-        GO_PATCH=$(sed -n 's/^GO_VERSION_PATCH:=//p' "$GO_MAKEFILE" | head -n 1)
-        GO_VERSION="$GO_MAJOR_MINOR.$GO_PATCH"
-        XRAY_VERSION=$(sed -n 's/^PKG_VERSION:=//p' "$XRAY_MAKEFILE" | head -n 1)
-        test -n "$GO_MAJOR_MINOR"
-        test -n "$GO_PATCH"
-        test -n "$XRAY_VERSION"
-        dpkg --compare-versions "$GO_VERSION" ge "1.26"
-        dpkg --compare-versions "$XRAY_VERSION" ge "26.7.11"
-        echo "已选中 Go $GO_VERSION / Passwall xray-core $XRAY_VERSION"
+        make defconfig
+        cp .config .config.full
+        bash "$GITHUB_WORKSPACE/scripts/check-build.sh" config
+        {
+          echo "OpenWrt: $REPO_BRANCH $(git rev-parse HEAD)"
+          for feed in packages luci routing telephony video passwall_luci passwall_packages; do
+            echo "$feed: $(git -C "feeds/$feed" rev-parse HEAD)"
+          done
+          for package in lucky; do
+            echo "$package: $(git -C "package/$package" rev-parse HEAD)"
+          done
+          echo 'Go: 1.27.3 (official packages feed)'
+        } > build-sources.txt
+
+    - name: 导出完整配置和源码版本
+      uses: actions/upload-artifact@v4
+      if: (!cancelled())
+      with:
+        name: defconfig-full
+        path: |
+          openwrt/.config.full
+          openwrt/build-sources.txt
 
     - name: SSH 远程调试（可选）
       uses: P3TERX/ssh2actions@v1.0.0
@@ -131,18 +147,9 @@ jobs:
       id: package
       run: |
         cd openwrt
-        make defconfig
-        echo "===== 导出 defconfig 后的完整配置用于排查 ====="
-        cp .config .config.full
         make download -j8
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
-
-    - name: 导出完整配置（用于排查网口问题）
-      uses: actions/upload-artifact@v4
-      with:
-        name: defconfig-full
-        path: openwrt/.config.full
 
     - name: 编译固件
       id: compile
@@ -155,21 +162,30 @@ jobs:
         [ -s DEVICE_NAME ] && echo "DEVICE_NAME=_$(cat DEVICE_NAME)" >> $GITHUB_ENV
         echo "FILE_DATE=_$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
 
+    - name: 校验固件组件和关键安全版本
+      id: verify
+      run: |
+        cd openwrt
+        bash "$GITHUB_WORKSPACE/scripts/check-build.sh" firmware
+        echo "status=success" >> $GITHUB_OUTPUT
+
     - name: 检查磁盘空间
       if: (!cancelled())
       run: df -hT
 
     - name: 整理固件文件
       id: organize
-      if: steps.compile.outputs.status == 'success' && !cancelled()
+      if: steps.verify.outputs.status == 'success' && !cancelled()
       run: |
+        cp openwrt/build-sources.txt openwrt/bin/targets/ipq40xx/generic/
+        cp openwrt/.config.full openwrt/bin/targets/ipq40xx/generic/build.config
         cd openwrt/bin/targets/*/*
         rm -rf packages
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: 上传固件到 Artifacts
-      uses: actions/upload-artifact@main
+      uses: actions/upload-artifact@v4
       if: steps.organize.outputs.status == 'success' && env.UPLOAD_FIRMWARE == 'true' && !cancelled()
       with:
         name: OpenWrt_R619AC_firmware${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
@@ -179,7 +195,7 @@ jobs:
       id: tag
       if: steps.organize.outputs.status == 'success' && env.UPLOAD_RELEASE == 'true' && !cancelled()
       run: |
-        echo "release_tag=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
+        echo "release_tag=25.12.6-test_$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
         touch release.txt
         echo "## R619AC OpenWRT 固件" >> release.txt
         echo "" >> release.txt
@@ -187,13 +203,15 @@ jobs:
         echo "- 设备：P&W R619AC 128M" >> release.txt
         echo "- 编译时间：$(date +"%Y-%m-%d %H:%M")" >> release.txt
         echo "- 包含：Passwall + LuCI 中文 + 基础工具" >> release.txt
+        echo "- 状态：25.12 迁移测试版，编译及组件校验不等于实机验收通过。" >> release.txt
         echo "" >> release.txt
         echo "### 刷机建议" >> release.txt
         echo "" >> release.txt
-        echo "1. OpBoot 先刷官方 24.10.0 factory.ubi 打底。" >> release.txt
-        echo "2. 进入官方 OpenWrt 后，在 LuCI 备份/升级页面刷本 Release 的 sysupgrade.bin。" >> release.txt
-        echo "3. 从官方 24.10.0 打底系统升级时，建议勾选保留配置。" >> release.txt
-        echo "4. 不建议直接用 OpBoot 首刷本 Release 的自编译 factory.ubi。" >> release.txt
+        echo "1. 适用于已正常运行官方体系 24.10 的 R619AC 128M，先备份配置、Lucky 数据及 Passwall 自定义规则。" >> release.txt
+        echo "2. 在路由器旁通过 LuCI 刷本 Release 的 sysupgrade.bin；镜像校验不通过时不要强制升级。" >> release.txt
+        echo "3. 可尝试保留配置，但旧 IPK 和 24.10 软件源不能用于 25.12 的 APK 系统。" >> release.txt
+        echo "4. 备好当前可用固件和 OpBoot 恢复方式；首次刷机仍参考 README 的官方打底说明。" >> release.txt
+        echo "5. 验证 LAN/WAN、双频 WiFi、Passwall、Lucky、硬盘挂载、共享、DLNA 和下载。" >> release.txt
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: 发布 Release
@@ -203,6 +221,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ steps.tag.outputs.release_tag }}
+        prerelease: true
         body_path: release.txt
         files: ${{ env.FIRMWARE }}/*
 
@@ -214,7 +233,7 @@ jobs:
 
     - name: 清理旧的 Release
       uses: dev-drprasad/delete-older-releases@master
-      if: env.UPLOAD_RELEASE == 'true' && !cancelled()
+      if: steps.tag.outputs.status == 'success' && !cancelled()
       with:
         keep_latest: 5
         delete_tags: true

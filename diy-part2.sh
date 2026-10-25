@@ -1,101 +1,55 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 #=============================================================
 # diy-part2.sh — 自定义配置加载后执行
 # 用途：修改默认设置（主机名、时区、IP 等）
 #=============================================================
 
-# 修改默认主机名
-sed -i 's/OpenWrt/R619AC/g' package/base-files/files/bin/config_generate
-
-# 修改默认时区为中国 (CST-8)
-sed -i "s/'UTC'/'CST-8'/g" package/base-files/files/bin/config_generate
-sed -i 's/"UTC"/"CST-8"/g' package/base-files/files/bin/config_generate
-
-# 修改默认时区名称
-sed -i "s/'UTC0'/'CST-8'/g" package/base-files/files/bin/config_generate
-sed -i 's/timezone=.*/timezone="CST-8"/g' package/base-files/files/bin/config_generate
-
 # 修改默认 LAN IP 为 192.168.2.1
-sed -i 's/192.168.1.1/192.168.2.1/g' package/base-files/files/bin/config_generate
+sed -i 's/192\.168\.1\.1/192.168.2.1/g' package/base-files/files/bin/config_generate
 
-# 设置 LuCI 默认语言为简体中文
+# 使用 UCI 设置默认值，避免修改 config_generate 中的 shell 语法。
 mkdir -p package/base-files/files/etc/uci-defaults
-cat > package/base-files/files/etc/uci-defaults/99-luci-language <<'EOF'
+cat > package/base-files/files/etc/uci-defaults/99-r619ac-defaults <<'EOF'
 #!/bin/sh
-uci set luci.main.lang='zh_cn'
-uci set luci.languages.zh_cn='简体中文 (Simplified Chinese)'
-uci commit luci
+uci -q batch <<'UCI'
+set system.@system[0].hostname='R619AC'
+set system.@system[0].timezone='CST-8'
+set system.@system[0].zonename='Asia/Shanghai'
+set luci.main.lang='zh_cn'
+set luci.main.mediaurlbase='/luci-static/bootstrap'
+set luci.languages.zh_cn='简体中文 (Simplified Chinese)'
+commit system
+commit luci
+UCI
 exit 0
 EOF
 
-# Passwall 当前的 Xray 26.7 和 sing-box 1.13 需要新版 Go，
-# OpenWrt 24.10 官方 feed 的 Go 1.23 无法编译。
-GOLANG_FEED_COMMIT="3757065cca28b7fbe0e1667040412990770ca2f4"
-rm -rf feeds/packages/lang/golang
-git init -q feeds/packages/lang/golang
-git -C feeds/packages/lang/golang remote add origin https://github.com/sbwml/packages_lang_golang.git
-git -C feeds/packages/lang/golang fetch --depth=1 origin "$GOLANG_FEED_COMMIT"
-git -C feeds/packages/lang/golang checkout -q --detach FETCH_HEAD
+# Xray 26.10.21 的 go.mod 要求 Go 1.27，使用官方 feed 的原生多版本工具链。
+test -f feeds/packages/lang/golang/golang1.27/Makefile
+sed -i 's/^GO_DEFAULT_VERSION:=.*/GO_DEFAULT_VERSION:=1.27/' feeds/packages/lang/golang/golang-values.mk
 
-# 移除 geoview 和 v2ray-plugin（非核心必备，减少编译体积和失败面）
-rm -rf feeds/passwall_packages/geoview
-rm -rf package/feeds/passwall_packages/geoview
-rm -rf feeds/passwall_packages/v2ray-plugin
-rm -rf package/feeds/passwall_packages/v2ray-plugin
-
-# OpenWrt 24.10 官方 xray-core 版本落后，与当前 Passwall 生成的配置不兼容。
-# 移除同名官方包并强制重装 Passwall 配套版本。
+# 强制选择 Passwall 配套核心，防止同名包落到官方版本。
 rm -rf feeds/packages/net/xray-core
 rm -rf package/feeds/packages/xray-core
 ./scripts/feeds install -p passwall_packages -f xray-core
 
-# 独立拉取缺失的第三方插件，避免引入整个 kenzo 源的冲突
-git clone --depth=1 -b lede https://github.com/pymumu/luci-app-smartdns.git package/luci-app-smartdns
-git clone --depth=1 https://github.com/sirpdboy/luci-app-lucky.git package/lucky
+# SmartDNS 及其 LuCI 使用官方 feeds；仅补充官方缺少的 Lucky。
+clone_at() {
+  local url="$1" revision="$2" destination="$3"
+  test ! -e "$destination"
+  git init -q "$destination"
+  git -C "$destination" remote add origin "$url"
+  git -C "$destination" fetch --depth=1 origin "$revision"
+  git -C "$destination" checkout -q --detach FETCH_HEAD
+}
 
-# Passwall Release 提供了单独的中文语言包，feed 中不一定能直接安装到镜像
-mkdir -p package/passwall-i18n/files
-wget -O package/passwall-i18n/files/luci-i18n-passwall-zh-cn.ipk \
-  https://github.com/Openwrt-Passwall/openwrt-passwall/releases/download/26.7.16-1/23.05-24.10_luci-i18n-passwall-zh-cn_26.7.16_all.ipk
-cat > package/passwall-i18n/Makefile <<'EOF'
-include $(TOPDIR)/rules.mk
+clone_at https://github.com/sirpdboy/luci-app-lucky.git \
+  31f068051de9798c0fb8f3e1d8e32310b4063e5d package/lucky
 
-PKG_NAME:=luci-i18n-passwall-zh-cn-release
-PKG_VERSION:=26.7.16
-PKG_RELEASE:=1
-PKG_ARCH:=all
-
-include $(INCLUDE_DIR)/package.mk
-
-define Package/luci-i18n-passwall-zh-cn-release
-  SECTION:=luci
-  CATEGORY:=LuCI
-  TITLE:=Passwall Simplified Chinese translation from upstream release
-  DEPENDS:=+luci-app-passwall
-endef
-
-define Build/Compile
-endef
-
-define Package/luci-i18n-passwall-zh-cn-release/install
-	$(INSTALL_DIR) $(1)/usr/share/passwall-i18n
-	$(INSTALL_DATA) ./files/luci-i18n-passwall-zh-cn.ipk $(1)/usr/share/passwall-i18n/
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_BIN) ./files/99-install-passwall-i18n $(1)/etc/uci-defaults/
-endef
-
-$(eval $(call BuildPackage,luci-i18n-passwall-zh-cn-release))
-EOF
-cat > package/passwall-i18n/files/99-install-passwall-i18n <<'EOF'
-#!/bin/sh
-opkg install /usr/share/passwall-i18n/luci-i18n-passwall-zh-cn.ipk
-rm -rf /usr/share/passwall-i18n
-rm -f /tmp/luci-indexcache* 2>/dev/null
-rm -rf /tmp/luci-modulecache 2>/dev/null
-exit 0
-EOF
+# 翻译由同一份 Passwall 源码编译成原生 APK，不在开机时下载或安装 IPK。
+test -s feeds/passwall_luci/luci-app-passwall/po/zh_Hans/passwall.po
 
 echo ">>> diy-part2.sh: 默认配置已修改"
 echo "    主机名: R619AC"
