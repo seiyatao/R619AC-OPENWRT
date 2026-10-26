@@ -132,7 +132,8 @@ jobs:
           done
           echo 'Go: 1.27.3 (official packages feed)'
           echo 'Samba: 4.22.11 (same-branch security update; patches/packages/100-samba-4.22.11.patch)'
-          sha256sum "$GITHUB_WORKSPACE"/patches/packages/*.patch
+          sha256sum "$GITHUB_WORKSPACE"/patches/packages/*.patch \
+            "$GITHUB_WORKSPACE"/patches/openwrt/*.patch
         } > build-sources.txt
 
     - name: 导出完整配置和源码版本
@@ -226,6 +227,7 @@ jobs:
         echo "- 修正无效的 Passwall 官方 APK 源，补齐 LuCI 本机 HTTPS 证书生成依赖。" >> release.txt
         echo "- Transmission 增加外接存储挂载保护，仅停用未修改的 HAProxy 默认示例服务。" >> release.txt
         echo "- 不修改 SSH root 密码登录策略、Lucky 证书或已有自定义 HAProxy 配置。" >> release.txt
+        echo "- 全新生成的双频 WiFi 默认开启，SSID 为 OpenWrt、无密码，仅用于首次配置；请立即设置无线和管理密码。保留配置升级不覆盖已有无线设置。" >> release.txt
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: 发布 Release

@@ -1,0 +1,7 @@
+--- a/package/network/config/wifi-scripts/files/lib/wifi/mac80211.uc
++++ b/package/network/config/wifi-scripts/files/lib/wifi/mac80211.uc
+@@ -115,3 +115,3 @@
+-set ${si}.disabled='${defaults ? 0 : 1}'
++set ${si}.disabled='0'
+ 
+ `);

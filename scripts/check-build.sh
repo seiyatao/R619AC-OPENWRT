@@ -46,6 +46,7 @@ check_config() {
   grep -qx 'PKG_RELEASE:=2' feeds/packages/net/transmission/Makefile || fail 'Transmission 未标记挂载保护修订版本'
   test -s files/usr/libexec/r619ac-storage-guard.sh || fail '缺少挂载保护运行脚本'
   test -s files/etc/uci-defaults/90-r619ac-runtime-fixes || fail '缺少首次启动修复脚本'
+  grep -Fqx "set \${si}.disabled='0'" package/network/config/wifi-scripts/files/lib/wifi/mac80211.uc || fail '新生成的 WiFi 热点仍默认关闭'
 }
 
 check_version() {

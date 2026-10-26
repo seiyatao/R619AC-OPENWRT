@@ -30,6 +30,8 @@ class BuildChecksTest(unittest.TestCase):
         self.write("feeds/packages/net/transmission/files/transmission.init",
                    'r619ac_require_storage "$config_dir" "$download_dir" || return 1\n')
         self.write("feeds/packages/net/transmission/Makefile", "PKG_RELEASE:=2\n")
+        self.write("package/network/config/wifi-scripts/files/lib/wifi/mac80211.uc",
+                   "set ${si}.disabled='0'\n")
         shutil.copytree(REPO / "files", self.root / "files")
 
     def write(self, name, content):
@@ -105,6 +107,11 @@ class BuildChecksTest(unittest.TestCase):
 
     def test_missing_storage_guard_is_rejected(self):
         (self.root / "files/usr/libexec/r619ac-storage-guard.sh").unlink()
+        self.assertNotEqual(self.run_check().returncode, 0)
+
+    def test_disabled_default_wifi_is_rejected(self):
+        self.write("package/network/config/wifi-scripts/files/lib/wifi/mac80211.uc",
+                   "set ${si}.disabled='${defaults ? 0 : 1}'\n")
         self.assertNotEqual(self.run_check().returncode, 0)
 
     def test_manifest_missing_translation_is_rejected(self):

@@ -2,6 +2,8 @@
 set -euo pipefail
 
 repo_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+# 只改变新生成无线接口的默认值，不覆盖保留的无线配置。
+patch --batch --forward --fuzz=0 -p1 < "$repo_dir/patches/openwrt/100-enable-default-wifi.patch"
 bash "$repo_dir/scripts/prepare-packages.sh"
 
 #=============================================================
