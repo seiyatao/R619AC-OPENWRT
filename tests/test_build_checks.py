@@ -24,6 +24,13 @@ class BuildChecksTest(unittest.TestCase):
         self.write("feeds/packages/lang/golang/golang1.27/Makefile", "GO_VERSION_PATCH:=3\n")
         self.write("package/feeds/passwall_packages/xray-core/Makefile", "PKG_VERSION:=26.10.21\n")
         self.write("feeds/passwall_luci/luci-app-passwall/po/zh_Hans/passwall.po", 'msgid "test"\n')
+        self.write("feeds/packages/net/samba4/Makefile",
+                   "PKG_VERSION:=4.22.11\n"
+                   "PKG_HASH:=d569b298a81cc212a39e9d1813bc4ca5c71ac93c4ceb2eec03db178096958d00\n")
+        self.write("feeds/packages/net/transmission/files/transmission.init",
+                   'r619ac_require_storage "$config_dir" "$download_dir" || return 1\n')
+        self.write("feeds/packages/net/transmission/Makefile", "PKG_RELEASE:=2\n")
+        shutil.copytree(REPO / "files", self.root / "files")
 
     def write(self, name, content):
         path = self.root / name
@@ -50,6 +57,10 @@ class BuildChecksTest(unittest.TestCase):
             "libmbedtls21": "3.6.7-r1",
             "xray-core": "26.10.21-r1",
             "luci-app-passwall": "26.10.22-r2",
+            "samba4-server": "4.22.11-r1",
+            "samba4-libs": "4.22.11-r1",
+            "samba4-utils": "4.22.11-r1",
+            "transmission-daemon": "4.1.3-r2",
         })
         packages.update(versions or {})
         if omit:
@@ -79,6 +90,23 @@ class BuildChecksTest(unittest.TestCase):
         self.write("feeds/packages/lang/golang/golang1.27/Makefile", "GO_VERSION_PATCH:=1\n")
         self.assertNotEqual(self.run_check().returncode, 0)
 
+    def test_invalid_passwall_repository_is_rejected(self):
+        self.write(".config", self.config.replace(
+            "# CONFIG_FEED_passwall_packages is not set", "CONFIG_FEED_passwall_packages=y"))
+        self.assertNotEqual(self.run_check().returncode, 0)
+
+    def test_missing_https_generator_is_rejected(self):
+        self.write(".config", self.config.replace("CONFIG_PACKAGE_px5g-mbedtls=y", ""))
+        self.assertNotEqual(self.run_check().returncode, 0)
+
+    def test_old_samba_source_is_rejected(self):
+        self.write("feeds/packages/net/samba4/Makefile", "PKG_VERSION:=4.22.7\n")
+        self.assertNotEqual(self.run_check().returncode, 0)
+
+    def test_missing_storage_guard_is_rejected(self):
+        (self.root / "files/usr/libexec/r619ac-storage-guard.sh").unlink()
+        self.assertNotEqual(self.run_check().returncode, 0)
+
     def test_manifest_missing_translation_is_rejected(self):
         self.manifest(omit="luci-i18n-passwall-zh-cn")
         self.assertNotEqual(self.run_check("firmware").returncode, 0)
@@ -92,6 +120,11 @@ class BuildChecksTest(unittest.TestCase):
     @unittest.skipUnless(shutil.which("dpkg"), "安全版本比较在 Linux CI 中运行")
     def test_old_webserver_is_rejected(self):
         self.manifest(versions={"uhttpd": "2025.07.06~7e64e8ba-r4"})
+        self.assertNotEqual(self.run_check("firmware").returncode, 0)
+
+    @unittest.skipUnless(shutil.which("dpkg"), "安全版本比较在 Linux CI 中运行")
+    def test_old_samba_manifest_is_rejected(self):
+        self.manifest(versions={"samba4-server": "4.22.7-r3"})
         self.assertNotEqual(self.run_check("firmware").returncode, 0)
 
 

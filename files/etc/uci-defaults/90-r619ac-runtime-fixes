@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# 仅删除误生成的官方地址，保留用户自建软件源及其他官方源。
+invalid_passwall_source='^https\?:\/\/downloads\.openwrt\.org\/releases\/[^/]*\/packages\/[^/]*\/passwall_\(luci\|packages\)\/packages\.adb[[:space:]]*$'
+for repository in /etc/apk/repositories.d/*.list; do
+	[ -f "$repository" ] || continue
+	grep -q "$invalid_passwall_source" "$repository" || continue
+	sed -i "/$invalid_passwall_source/d" "$repository" || exit 1
+done
+
+# 不改写 HAProxy 配置，也不影响 Passwall 自己管理的负载均衡进程。
+if [ -x /etc/init.d/haproxy ] && [ -f /rom/etc/haproxy.cfg ] && \
+	cmp -s /etc/haproxy.cfg /rom/etc/haproxy.cfg; then
+	/etc/init.d/haproxy stop
+	/etc/init.d/haproxy disable || exit 1
+fi
+
+exit 0

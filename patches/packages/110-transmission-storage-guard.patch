@@ -1,0 +1,26 @@
+--- a/net/transmission/Makefile
++++ b/net/transmission/Makefile
+@@ -10,6 +10,6 @@
+ PKG_NAME:=transmission
+ PKG_VERSION:=4.1.3
+-PKG_RELEASE:=1
++PKG_RELEASE:=2
+ 
+ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
+ PKG_SOURCE_URL:=https://github.com/transmission/transmission/releases/download/$(PKG_VERSION)/
+--- a/net/transmission/files/transmission.init
++++ b/net/transmission/files/transmission.init
+@@ -81,6 +81,13 @@
+ 	local USE
+ 	[ "$MEM" -gt 1 ] && USE=$((MEM * mem_percentage * 10))
+ 
++	. /usr/libexec/r619ac-storage-guard.sh || return 1
++	r619ac_require_storage "$config_dir" "$download_dir" || return 1
++	[ "$incomplete_dir_enabled" = "0" ] || \
++		r619ac_require_storage "$incomplete_dir" || return 1
++	[ "$watch_dir_enabled" = "0" ] || \
++		r619ac_require_storage "$watch_dir" || return 1
++
+ 	config_file="$config_dir/settings.json"
+ 	[ -d "$config_dir" ] || {
+ 		mkdir -p "$config_dir"

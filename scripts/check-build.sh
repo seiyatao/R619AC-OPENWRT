@@ -2,7 +2,7 @@
 set -euo pipefail
 
 required_packages=(
-  luci luci-base luci-app-package-manager luci-i18n-base-zh-cn
+  luci luci-base luci-ssl px5g-mbedtls luci-app-package-manager luci-i18n-base-zh-cn
   luci-i18n-package-manager-zh-cn luci-theme-bootstrap
   luci-app-passwall luci-i18n-passwall-zh-cn
   xray-core v2ray-geoip v2ray-geosite chinadns-ng dnsmasq-full firewall4
@@ -25,6 +25,9 @@ check_config() {
   grep -qx 'CONFIG_TARGET_ipq40xx_generic_DEVICE_p2w_r619ac-128m=y' .config || fail '目标机型不正确'
   grep -qx 'CONFIG_USE_APK=y' .config || fail '必须使用原生 APK 包管理器'
   grep -qx 'CONFIG_LUCI_LANG_zh_Hans=y' .config || fail '未启用简体中文'
+  for feed in passwall_luci passwall_packages; do
+    grep -qx "# CONFIG_FEED_${feed} is not set" .config || fail "仍会生成不存在的官方 APK 源：$feed"
+  done
   grep -qx 'CONFIG_PACKAGE_luci-app-passwall_Nftables_Transparent_Proxy=y' .config || fail '未启用 Passwall nftables 支持'
   for package in "${required_packages[@]}"; do
     grep -qx "CONFIG_PACKAGE_${package}=y" .config || fail "必需组件未进入镜像：$package"
@@ -37,6 +40,12 @@ check_config() {
   grep -qx 'GO_VERSION_PATCH:=3' feeds/packages/lang/golang/golang1.27/Makefile || fail 'Go 安全更新版本不正确'
   grep -qx 'PKG_VERSION:=26.10.21' package/feeds/passwall_packages/xray-core/Makefile || fail 'Xray 版本不正确'
   test ! -e package/feeds/packages/xray-core || fail '仍有同名官方 Xray 包'
+  grep -qx 'PKG_VERSION:=4.22.11' feeds/packages/net/samba4/Makefile || fail '未应用 Samba 安全更新'
+  grep -qx 'PKG_HASH:=d569b298a81cc212a39e9d1813bc4ca5c71ac93c4ceb2eec03db178096958d00' feeds/packages/net/samba4/Makefile || fail 'Samba 源码校验值不正确'
+  grep -q 'r619ac_require_storage "\$config_dir" "\$download_dir"' feeds/packages/net/transmission/files/transmission.init || fail 'Transmission 缺少挂载保护'
+  grep -qx 'PKG_RELEASE:=2' feeds/packages/net/transmission/Makefile || fail 'Transmission 未标记挂载保护修订版本'
+  test -s files/usr/libexec/r619ac-storage-guard.sh || fail '缺少挂载保护运行脚本'
+  test -s files/etc/uci-defaults/90-r619ac-runtime-fixes || fail '缺少首次启动修复脚本'
 }
 
 check_version() {
@@ -67,6 +76,10 @@ case "${1:-config}" in
       check_version libopenssl3 3.5.9
       check_version xray-core 26.10.21
       check_version luci-app-passwall 26.10.22-r2
+      check_version samba4-server 4.22.11
+      check_version samba4-libs 4.22.11
+      check_version samba4-utils 4.22.11
+      check_version transmission-daemon 4.1.3-r2
       if grep -q '^libmbedtls21 - ' "$manifest"; then
         check_version libmbedtls21 3.6.7
       fi

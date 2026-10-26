@@ -1,0 +1,22 @@
+--- a/net/samba4/Makefile
++++ b/net/samba4/Makefile
+@@ -2,8 +2,8 @@
+ include $(TOPDIR)/rules.mk
+ 
+ PKG_NAME:=samba
+-PKG_VERSION:=4.22.7
+-PKG_RELEASE:=3
++PKG_VERSION:=4.22.11
++PKG_RELEASE:=1
+ 
+ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+ PKG_SOURCE_URL:= \
+@@ -13,7 +13,7 @@
+ 		http://www.nic.funet.fi/index/samba/pub/samba/stable/ \
+ 		http://samba.mirror.bit.nl/samba/ftp/stable/ \
+ 		https://download.samba.org/pub/samba/stable/
+-PKG_HASH:=12195811d4542f661536e9055b44d58c53020412beafaae205e227bf72f6a497
++PKG_HASH:=d569b298a81cc212a39e9d1813bc4ca5c71ac93c4ceb2eec03db178096958d00
+ 
+ PKG_BUILD_FLAGS:=gc-sections
+ 

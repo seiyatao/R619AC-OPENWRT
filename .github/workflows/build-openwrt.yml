@@ -31,6 +31,9 @@ on:
       - 'diy-part2.sh'
       - 'scripts/**'
       - 'tests/**'
+      - 'patches/**'
+      - 'files/**'
+      - '.gitattributes'
       - '.github/workflows/build-openwrt.yml'
 
 env:
@@ -57,9 +60,11 @@ jobs:
 
     - name: 检查构建校验脚本
       run: |
-        for script in diy-part1.sh diy-part2.sh scripts/check-build.sh; do
+        for script in diy-part1.sh diy-part2.sh scripts/*.sh; do
           bash -n "$script"
         done
+        sh -n files/usr/libexec/r619ac-storage-guard.sh
+        sh -n files/etc/uci-defaults/90-r619ac-runtime-fixes
         python3 -m unittest discover -s tests -v
 
     - name: 初始化编译环境
@@ -117,6 +122,7 @@ jobs:
         cp .config .config.full
         bash "$GITHUB_WORKSPACE/scripts/check-build.sh" config
         {
+          echo "R619AC build repo: $GITHUB_SHA"
           echo "OpenWrt: $REPO_BRANCH $(git rev-parse HEAD)"
           for feed in packages luci routing telephony video passwall_luci passwall_packages; do
             echo "$feed: $(git -C "feeds/$feed" rev-parse HEAD)"
@@ -125,6 +131,8 @@ jobs:
             echo "$package: $(git -C "package/$package" rev-parse HEAD)"
           done
           echo 'Go: 1.27.3 (official packages feed)'
+          echo 'Samba: 4.22.11 (same-branch security update; patches/packages/100-samba-4.22.11.patch)'
+          sha256sum "$GITHUB_WORKSPACE"/patches/packages/*.patch
         } > build-sources.txt
 
     - name: 导出完整配置和源码版本
@@ -207,11 +215,17 @@ jobs:
         echo "" >> release.txt
         echo "### 刷机建议" >> release.txt
         echo "" >> release.txt
-        echo "1. 适用于已正常运行官方体系 24.10 的 R619AC 128M，先备份配置、Lucky 数据及 Passwall 自定义规则。" >> release.txt
-        echo "2. 在路由器旁通过 LuCI 刷本 Release 的 sysupgrade.bin；镜像校验不通过时不要强制升级。" >> release.txt
-        echo "3. 可尝试保留配置，但旧 IPK 和 24.10 软件源不能用于 25.12 的 APK 系统。" >> release.txt
-        echo "4. 备好当前可用固件和 OpBoot 恢复方式；首次刷机仍参考 README 的官方打底说明。" >> release.txt
+        echo "1. 仅适用于 R619AC 128M，先备份配置、Lucky 数据及 Passwall 自定义规则，备好恢复固件和 OpBoot。" >> release.txt
+        echo "2. OpBoot 首次安装、救援及 24.10 跨版本迁移：先刷官方原始精简版 25.12.6 factory.ubi 打底，再从官方 LuCI 保留基础配置刷本 Release 的 sysupgrade.bin。" >> release.txt
+        echo "3. 已正常运行本仓库 25.12 的同分支升级可使用 LuCI；镜像校验不通过时不要强制升级。" >> release.txt
+        echo "4. 旧配置应分项恢复，旧 IPK、24.10 软件源及内核模块不能复用；详细文件、官方链接和步骤见 README。" >> release.txt
         echo "5. 验证 LAN/WAN、双频 WiFi、Passwall、Lucky、硬盘挂载、共享、DLNA 和下载。" >> release.txt
+        echo "" >> release.txt
+        echo "### 维护修复" >> release.txt
+        echo "- Samba 更新至 4.22.11，补齐同分支安全修复。" >> release.txt
+        echo "- 修正无效的 Passwall 官方 APK 源，补齐 LuCI 本机 HTTPS 证书生成依赖。" >> release.txt
+        echo "- Transmission 增加外接存储挂载保护，仅停用未修改的 HAProxy 默认示例服务。" >> release.txt
+        echo "- 不修改 SSH root 密码登录策略、Lucky 证书或已有自定义 HAProxy 配置。" >> release.txt
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: 发布 Release

@@ -62,3 +62,7 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+# 补丁上下文需保留上游原始缩进和空行标记。
+*.patch text eol=lf -whitespace
+files/** text eol=lf

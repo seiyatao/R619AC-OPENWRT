@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
+repo_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+bash "$repo_dir/scripts/prepare-packages.sh"
+
 #=============================================================
 # diy-part2.sh — 自定义配置加载后执行
 # 用途：修改默认设置（主机名、时区、IP 等）
